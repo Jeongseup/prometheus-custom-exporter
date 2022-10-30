@@ -179,7 +179,7 @@ func main() {
 	}
 	collector.DisableDefaultCollectors()
 	nc.RegisterCollector("time", "test1", timecollector.NewTimeCollector)
-	nc.RegisterCollector("time", "test2", timecollector.NewTimeCollector)
+	// nc.RegisterCollector("time", "test2", timecollector.NewTimeCollector)
 
 	level.Info(logger).Log("msg", "Starting node_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
