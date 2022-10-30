@@ -28,12 +28,13 @@ import (
 )
 
 type typedDesc struct {
-	desc      *prometheus.Desc
-	valueType prometheus.ValueType
+	desc *prometheus.GaugeVec
+	// valueType prometheus.ValueType
 }
 
 func (d *typedDesc) mustNewConstMetric(value float64, labels ...string) prometheus.Metric {
-	return prometheus.MustNewConstMetric(d.desc, d.valueType, value, labels...)
+	// return prometheus.MustNewConstMetric(d.desc, d.valueType, value, labels...)
+	// return d.desc.WithLabelValues(labels...).Set(value)
 }
 
 type TimeCollector struct {
@@ -63,13 +64,14 @@ func NewTimeCollector(lable string, logger log.Logger) (collector.Collector, err
 	// deviceTempGaugeVector.WithLabelValues()
 
 	const subsystem = "time"
-	return &TimeCollector{
-		now: typedDesc{prometheus.NewDesc(
-			prometheus.BuildFQName(collector.Namespace, subsystem, "seconds"),
-			"System time in seconds since epoch (1970).",
-			nil, prometheus.Labels{"my_type2": lable},
-		), prometheus.GaugeValue},
 
+	return &TimeCollector{
+		now: typedDesc{prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: collector.Namespace + subsystem + "seconds",
+			},
+			[]string{"device_id"},
+		)},
 		logger: logger,
 	}, nil
 }
@@ -80,7 +82,9 @@ func (c *TimeCollector) Update(ch chan<- prometheus.Metric) error {
 	// zone, zoneOffset := now.Zone()
 
 	level.Debug(c.logger).Log("msg", "Return time", "now", nowSec)
-	ch <- c.now.mustNewConstMetric(nowSec)
+	// metrics := c.now.desc.WithLabelValues("test").Set(nowSec)
+	// c.now.desc.CurryWith()
+	// metrics := c.now.desc.WithLabelValues("test").Set(nowSec)
 
 	// level.Debug(c.logger).Log("msg", "Zone offset", "offset", zoneOffset, "time_zone", c.lable)
 	// ch <- c.zone.mustNewConstMetric(float64(zoneOffset), zone)
