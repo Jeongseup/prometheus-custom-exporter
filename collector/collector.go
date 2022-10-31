@@ -50,7 +50,8 @@ const (
 )
 
 var (
-	factories              = make(map[string]func(lable string, logger log.Logger) (Collector, error))
+	factories = make(map[string]func(lable string, logger log.Logger) (Collector, error))
+	// factory                = make(map[string]func(lable string, logger log.Logger) (Collector, error))
 	initiatedCollectorsMtx = sync.Mutex{}
 	initiatedCollectors    = make(map[string]Collector)
 	collectorState         = make(map[string]bool)
@@ -62,54 +63,69 @@ func (n *NodeCollector) RegisterCollector(collector, lable string, factory func(
 	// flag := kingpin.Flag(flagName, flagHelp).Default(defaultValue).Action(collectorFlagAction(collector)).Bool()
 	var new_key string = collector + lable
 
-	fmt.Println("before collectorState :", collectorState)
+	fmt.Println("add collecotor :", collectorState)
 	collectorState[new_key] = true
 	fmt.Println("after collectorState :", collectorState)
 
-	fmt.Println("before factories :", factories)
-	factories[new_key] = factory
-	fmt.Println("after factories :", factories)
+	// fmt.Println("before factories :", factories)
+	// factories[new_key] = factory
+	// fmt.Println("after factories :", factories)
 
-	// f := make(map[string]bool)
-	// for _, filter := range filters {
-	// 	enabled, exist := collectorState[filter]
-	// 	if !exist {
-	// 		return nil, fmt.Errorf("missing collector: %s", filter)
-	// 	}
-	// 	if !enabled {
-	// 		return nil, fmt.Errorf("disabled collector: %s", filter)
-	// 	}
-	// 	f[filter] = true
-	// }
-
-	collectors := make(map[string]Collector)
+	// collectors := make(map[string]Collector)
 	initiatedCollectorsMtx.Lock()
 	defer initiatedCollectorsMtx.Unlock()
 
 	fmt.Printf("collectroState: %v\n", collectorState)
-	for key, enabled := range collectorState {
-		fmt.Println("in loop")
-		// if !enabled || (len(f) > 0 && !f[key]) {
-		// 	continue
-		// }
+	// fmt.Println("line90", key, enabled, lable)
+	// fmt.Println("here", collectors)
 
-		fmt.Println(key, enabled)
-		collector, err := factories[key](lable, n.logger)
-		if err != nil {
-			return
-		}
-		collectors[key] = collector
-		// initiatedCollectors[key] = collector
-		fmt.Println("key:", key, "after map:", collectors)
+	c, err := factory(lable, n.logger)
+	if err != nil {
+		return
 	}
-	fmt.Println("here", collectors)
-	n.Collectors = collectors
+
+	fmt.Println("registre collector: ", c)
+	n.Collectors[new_key] = c
+	// collectors[key] = collector
+	// collectors[key] = collector
+	// initiatedCollectors[key] = collector
+	// fmt.Println("key:", key, "after map:", collectors)
+
 }
 
 // NodeCollector implements the prometheus.Collector interface.
 type NodeCollector struct {
 	Collectors map[string]Collector
 	logger     log.Logger
+}
+
+// DisableDefaultCollectors sets the collector state to false for all collectors which
+// have not been explicitly enabled on the command line.
+func (n *NodeCollector) Allow() {
+
+	collectors := make(map[string]Collector)
+	initiatedCollectorsMtx.Lock()
+	defer initiatedCollectorsMtx.Unlock()
+
+	fmt.Printf("collectroState: %v\n", collectorState)
+	// fmt.Println("line90", key, enabled, lable)
+	fmt.Println("here", collectors)
+
+	for key, enabled := range collectorState {
+		fmt.Println("in loop")
+		fmt.Println(key, enabled)
+		// if !enabled || (len(f) > 0 && !f[key]) {
+		// 	continue
+		// }
+
+		// collector, err := factories[key](lable, n.logger)
+		// if err != nil {
+		// 	return
+		// }
+		// collectors[key] = collector
+		// initiatedCollectors[key] = collector
+		// fmt.Println("key:", key, "after map:", collectors)
+	}
 }
 
 // DisableDefaultCollectors sets the collector state to false for all collectors which
@@ -128,8 +144,10 @@ func DisableDefaultCollectors() {
 
 // NewNodeCollector creates a new NodeCollector.
 func NewNodeCollector(logger log.Logger) (*NodeCollector, error) {
+	collectors := make(map[string]Collector)
+
 	return &NodeCollector{
-		Collectors: nil,
+		Collectors: collectors,
 		logger:     logger,
 	}, nil
 }

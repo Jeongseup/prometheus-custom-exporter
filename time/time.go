@@ -65,9 +65,9 @@ func NewTimeCollector(lable string, logger log.Logger) (collector.Collector, err
 	const subsystem = "time"
 	return &TimeCollector{
 		now: typedDesc{prometheus.NewDesc(
-			prometheus.BuildFQName(collector.Namespace, subsystem, "seconds"),
+			prometheus.BuildFQName("", lable, "seconds"),
 			"System time in seconds since epoch (1970).",
-			nil, prometheus.Labels{"my_type2": lable},
+			nil, prometheus.Labels{lable: lable + "value"},
 		), prometheus.GaugeValue},
 
 		logger: logger,
